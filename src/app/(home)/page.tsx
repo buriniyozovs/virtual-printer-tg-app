@@ -53,7 +53,10 @@ export default async function Home() {
     }
   }, [telegram])
 
-  return null // Component doesn't render any UI, as MainButton is controlled by Telegram WebApp
+  return (
+    <div>hello</div>
+    // Component doesn't render any UI, as MainButton is controlled by Telegram WebApp
+  ) // Component doesn't render any UI, as MainButton is controlled by Telegram WebApp
 }
 // const resolvedSearchParams = await searchParams
 
