@@ -67,6 +67,7 @@ export default function OrderUi({ userId }: OrderUiProps) {
   }, [])
 
   const onCheckOut = () => {
+    console.log('Check Out clicked')
     if (telegram) {
       telegram.MainButton.text = 'Create Order'
       telegram.MainButton.color = '#4CAF50' // Green color
@@ -204,7 +205,7 @@ export default function OrderUi({ userId }: OrderUiProps) {
         <button
           onClick={onCheckOut}
           disabled={loading}
-          className="bg-green-500 text-white px-4 py-2 rounded disabled:bg-gray-400 w-full"
+          className="bg-green-500 text-white px-4 py-2 rounded disabled:bg-gray-400 w-full cursor-pointer mt-4"
         >
           {loading ? 'Submitting...' : 'Submit Order'}
         </button>
