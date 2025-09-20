@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
+import TelegramWrapper from '../containers/telegramWrapper/TelegramWrapper' // Adjust path as needed
 import './globals.css'
 
 const geistSans = Geist({
@@ -24,13 +25,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        <script src="https://telegram.org/js/telegram-web-app.js?59"></script>
-      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <TelegramWrapper>{children}</TelegramWrapper>
       </body>
     </html>
   )
