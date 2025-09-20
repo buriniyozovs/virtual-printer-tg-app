@@ -76,17 +76,11 @@ export default function OrderUi({ userId }: OrderUiProps) {
       setTelegram(window.Telegram.WebApp)
       window.Telegram.WebApp.ready()
       window.Telegram.WebApp.expand()
-    }
-  }, [])
-
-  const onCheckOut = () => {
-    console.log('Check Out clicked')
-    if (telegram) {
       telegram.MainButton.text = 'Create Order'
       telegram.MainButton.color = '#4CAF50'
       telegram.MainButton.show()
     }
-  }
+  }, [])
 
   const handleSubmit = useCallback(async () => {
     setLoading(true)
