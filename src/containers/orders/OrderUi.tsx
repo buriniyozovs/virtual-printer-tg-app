@@ -115,11 +115,7 @@ export default function OrderUi({ userId }: OrderUiProps) {
       console.log('Sending order data:', orderData)
 
       if (telegram) {
-        // Send data back to Telegram
         telegram.sendData(JSON.stringify(orderData))
-
-        // You might want to close the web app after sending data
-        // telegram.close()
       }
 
       // Reset form
@@ -143,14 +139,17 @@ export default function OrderUi({ userId }: OrderUiProps) {
 
   useEffect(() => {
     if (telegram) {
-      const handleMainButtonClick: () => void = () => {
+      const handleMainButtonClick = () => {
+        console.log('MainButton clicked') // Debug log
         handleSubmit()
       }
 
-      telegram.MainButton.onClick(handleMainButtonClick)
+      telegram.onEvent('mainButtonClicked', handleMainButtonClick)
+      console.log('MainButton event listener attached') // Debug log
 
       return () => {
-        telegram.MainButton.offClick(handleMainButtonClick)
+        telegram.offEvent('mainButtonClicked', handleMainButtonClick)
+        console.log('MainButton event listener removed') // Debug log
       }
     }
   }, [handleSubmit, telegram])
