@@ -93,7 +93,7 @@ export default function OrderUi({ userId }: OrderUiProps) {
           createdAt: Date.now(),
           updatedAt: Date.now(),
         }
-        telegram.sendData(JSON.stringify({}))
+        telegram.sendData(JSON.stringify({ orderData }))
         setPageCount(0)
         setFormat('')
         setColor('')
