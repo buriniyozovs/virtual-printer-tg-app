@@ -7,7 +7,6 @@ export default function TelegramWrapper({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (window.Telegram?.WebApp) {
       window.Telegram.WebApp.ready()
-      window.Telegram.WebApp.expand()
     }
   }, [])
 
