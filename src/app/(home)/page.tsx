@@ -1,4 +1,3 @@
-'use client'
 import OrderUi from '@/containers/orders/OrderUi'
 interface HomePageProps {
   searchParams: Promise<{ [key: string]: string | undefined }>

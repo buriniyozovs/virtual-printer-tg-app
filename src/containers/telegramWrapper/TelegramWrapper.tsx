@@ -1,11 +1,14 @@
 'use client'
 
 import Script from 'next/script'
-import { ReactNode, useEffect } from 'react'
+import { ReactNode, useEffect, useState } from 'react'
 
 export default function TelegramWrapper({ children }: { children: ReactNode }) {
+  const [isClient, setIsClient] = useState(false)
+
   useEffect(() => {
-    if (window?.Telegram?.WebApp) {
+    setIsClient(true)
+    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
       window.Telegram.WebApp.ready()
     }
   }, [])
@@ -18,7 +21,7 @@ export default function TelegramWrapper({ children }: { children: ReactNode }) {
         onLoad={() => console.log('Telegram Web App SDK loaded')}
         onError={() => console.error('Failed to load Telegram Web App SDK')}
       />
-      {children}
+      {isClient && children}
     </>
   )
 }
