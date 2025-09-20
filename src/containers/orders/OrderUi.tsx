@@ -116,12 +116,7 @@ export default function OrderUi({ userId }: OrderUiProps) {
 
       if (telegram) {
         // Send data back to Telegram
-        telegram.sendData(
-          JSON.stringify({
-            type: 'order_created',
-            data: orderData,
-          })
-        )
+        telegram.sendData(JSON.stringify(orderData))
 
         // You might want to close the web app after sending data
         // telegram.close()
@@ -159,11 +154,6 @@ export default function OrderUi({ userId }: OrderUiProps) {
       }
     }
   }, [handleSubmit, telegram])
-
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    handleSubmit()
-  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
