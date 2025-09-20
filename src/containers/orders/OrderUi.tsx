@@ -2,6 +2,15 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
+// Extend the Window interface to include Telegram
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp?: any
+    }
+  }
+}
+
 // Define the Order interface based on the provided schema
 interface Order {
   _id?: string
