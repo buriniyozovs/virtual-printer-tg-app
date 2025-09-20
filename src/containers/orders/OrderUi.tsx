@@ -1,7 +1,6 @@
 'use client'
 
-import axios from 'axios'
-import React, { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 // Define the Order interface based on the provided schema
 interface Order {
@@ -48,11 +47,6 @@ export default function OrderUi({ userId }: OrderUiProps) {
   const [binding, setBinding] = useState<string>('')
   const [notes, setNotes] = useState<string>('')
   const [address, setAddress] = useState<string>('')
-  const [location, setLocation] = useState<{
-    latitude: number
-    longitude: number
-  } | null>(null)
-  const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string>('')
   const telegram = window.Telegram?.WebApp
@@ -96,76 +90,48 @@ export default function OrderUi({ userId }: OrderUiProps) {
   // }
 
   // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-
+  const handleSubmit = useCallback(() => {
     try {
-      // Upload file to get fileId
-      // let fileId: string | undefined
-      // if (file) {
-      //   const formData = new FormData()
-      //   formData.append('file', file)
-      //   const fileResponse = await axios.post('/api/upload', formData, {
-      //     headers: { 'Content-Type': 'multipart/form-data' },
-      //   })
-      //   fileId = fileResponse.data.fileId
-      // }
-
-      const orderData: Partial<Order> = {
-        // fileId,
-        pageCount,
-        format: format || undefined,
-        color: color || undefined,
-        binding: binding || undefined,
-        status: 'CREATING',
-        notes: notes || undefined,
-        address: address || undefined,
-        location: location || undefined,
-        createdBy:
-          userId || window?.Telegram?.WebApp?.initDataUnsafe?.user?.id || '',
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
+      setLoading(true)
+      setError('')
+      if (telegram) {
+        const orderData: Partial<Order> = {
+          // fileId,
+          pageCount,
+          format: format || undefined,
+          color: color || undefined,
+          binding: binding || undefined,
+          status: 'CREATING',
+          notes: notes || undefined,
+          address: address || undefined,
+          createdBy:
+            userId || window?.Telegram?.WebApp?.initDataUnsafe?.user?.id || '',
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        }
+        telegram.sendData(JSON.stringify({}))
+        setPageCount(0)
+        setFormat('')
+        setColor('')
+        setBinding('')
+        setNotes('')
+        setAddress('')
       }
-
-      const response = await axios.post('/api/orders', orderData)
-      setOrders([...orders, response.data])
-      // Reset form
-      // setFile(null)
-      setPageCount(0)
-      setFormat('')
-      setColor('')
-      setBinding('')
-      setNotes('')
-      setAddress('')
-      setLocation(null)
-    } catch (err) {
+    } catch (error) {
       setError('Failed to submit order')
     } finally {
       setLoading(false)
     }
-  }
+  }, [pageCount, format, color, binding, notes, address, userId, telegram])
 
-  // Handle location capture (simplified, assuming Telegram Web App location API or manual input)
-  const handleLocation = () => {
-    // Placeholder for Telegram location API or browser geolocation
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          })
-        },
-        () => {
-          setError('Failed to get location')
-        }
-      )
-    } else {
-      setError('Geolocation not supported')
+  useEffect(() => {
+    if (telegram) {
+      telegram.onEvent('mainButtonClicked', handleSubmit)
+      return () => {
+        telegram.offEvent('mainButtonClicked', handleSubmit)
+      }
     }
-  }
+  }, [handleSubmit, telegram])
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
@@ -173,7 +139,6 @@ export default function OrderUi({ userId }: OrderUiProps) {
         <h1 className="text-2xl font-bold mb-4 text-center">
           Book Printing Order
         </h1>
-
         {/* Order Form */}
         <form onSubmit={onCheckOut} className="space-y-4">
           {/* <div>
@@ -266,22 +231,6 @@ export default function OrderUi({ userId }: OrderUiProps) {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium">Location</label>
-            <button
-              type="button"
-              onClick={handleLocation}
-              className="mt-1 bg-blue-500 text-white px-4 py-2 rounded"
-            >
-              Share Location
-            </button>
-            {location && (
-              <p className="mt-2 text-sm">
-                Latitude: {location.latitude}, Longitude: {location.longitude}
-              </p>
-            )}
-          </div>
-
           {error && <p className="text-red-500 text-center">{error}</p>}
 
           <button
@@ -292,8 +241,7 @@ export default function OrderUi({ userId }: OrderUiProps) {
             {loading ? 'Submitting...' : 'Submit Order'}
           </button>
         </form>
-
-        {/* Display Existing Orders */}
+        {/* Display Existing Orders
         {userId && (
           <div className="mt-8">
             <h2 className="text-xl font-bold mb-4 text-center">Your Orders</h2>
@@ -358,7 +306,7 @@ export default function OrderUi({ userId }: OrderUiProps) {
               </ul>
             )}
           </div>
-        )}
+        )} */}
       </div>
     </div>
   )
