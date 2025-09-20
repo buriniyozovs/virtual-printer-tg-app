@@ -39,8 +39,6 @@ interface OrderUiProps {
 }
 
 export default function OrderUi({ userId }: OrderUiProps) {
-  // State for form inputs
-  // const [file, setFile] = useState<File | null>(null)
   const [pageCount, setPageCount] = useState<number>(0)
   const [format, setFormat] = useState<string>('')
   const [color, setColor] = useState<string>('')
@@ -67,29 +65,6 @@ export default function OrderUi({ userId }: OrderUiProps) {
     }
   }
 
-  // Fetch existing orders for the user
-  // useEffect(() => {
-  //   if (userId) {
-  //     const fetchOrders = async () => {
-  //       try {
-  //         const response = await axios.get(`/api/orders?userId=${userId}`)
-  //         setOrders(response.data)
-  //       } catch (err) {
-  //         setError('Failed to fetch orders')
-  //       }
-  //     }
-  //     fetchOrders()
-  //   }
-  // }, [userId])
-
-  // Handle file selection
-  // const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   if (e.target.files && e.target.files[0]) {
-  //     setFile(e.target.files[0])
-  //   }
-  // }
-
-  // Handle form submission
   const handleSubmit = useCallback(() => {
     try {
       setLoading(true)
@@ -139,174 +114,91 @@ export default function OrderUi({ userId }: OrderUiProps) {
         <h1 className="text-2xl font-bold mb-4 text-center">
           Book Printing Order
         </h1>
-        {/* Order Form */}
-        <form onSubmit={onCheckOut} className="space-y-4">
-          {/* <div>
-            <label className="block text-sm font-medium">
-              Upload Book File (PDF)
-            </label>
-            <input
-              type="file"
-              accept=".pdf"
-              onChange={handleFileChange}
-              className="mt-1 block w-full border rounded p-2"
-              required
-            />
-          </div> */}
 
-          <div>
-            <label className="block text-sm font-medium">Page Count</label>
-            <input
-              type="number"
-              value={pageCount}
-              onChange={(e) => setPageCount(Number(e.target.value))}
-              className="mt-1 block w-full border rounded p-2"
-              required
-              min="1"
-            />
-          </div>
+        <div>
+          <label className="block text-sm font-medium">Page Count</label>
+          <input
+            type="number"
+            value={pageCount}
+            onChange={(e) => setPageCount(Number(e.target.value))}
+            className="mt-1 block w-full border rounded p-2"
+            required
+            min="1"
+          />
+        </div>
 
-          <div>
-            <label className="block text-sm font-medium">Format</label>
-            <select
-              value={format}
-              onChange={(e) => setFormat(e.target.value)}
-              className="mt-1 block w-full border rounded p-2"
-            >
-              <option value="">Select Format</option>
-              <option value="A4">A4</option>
-              <option value="A5">A5</option>
-              <option value="Letter">Letter</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium">Color</label>
-            <select
-              value={color}
-              onChange={(e) => setColor(e.target.value)}
-              className="mt-1 block w-full border rounded p-2"
-            >
-              <option value="">Select Color</option>
-              <option value="Color">Color</option>
-              <option value="Black & White">Black & White</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium">Binding</label>
-            <select
-              value={binding}
-              onChange={(e) => setBinding(e.target.value)}
-              className="mt-1 block w-full border rounded p-2"
-            >
-              <option value="">Select Binding</option>
-              <option value="Softcover">Softcover</option>
-              <option value="Hardcover">Hardcover</option>
-              <option value="Spiral">Spiral</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium">
-              Notes (max 500 characters)
-            </label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value.slice(0, 500))}
-              className="mt-1 block w-full border rounded p-2"
-              rows={4}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium">
-              Delivery Address
-            </label>
-            <input
-              type="text"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              className="mt-1 block w-full border rounded p-2"
-            />
-          </div>
-
-          {error && <p className="text-red-500 text-center">{error}</p>}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-green-500 text-white px-4 py-2 rounded disabled:bg-gray-400 w-full"
+        <div>
+          <label className="block text-sm font-medium">Format</label>
+          <select
+            value={format}
+            onChange={(e) => setFormat(e.target.value)}
+            className="mt-1 block w-full border rounded p-2"
           >
-            {loading ? 'Submitting...' : 'Submit Order'}
-          </button>
-        </form>
-        {/* Display Existing Orders
-        {userId && (
-          <div className="mt-8">
-            <h2 className="text-xl font-bold mb-4 text-center">Your Orders</h2>
-            {orders.length === 0 ? (
-              <p className="text-center">No orders found.</p>
-            ) : (
-              <ul className="space-y-4">
-                {orders.map((order) => (
-                  <li key={order._id} className="border p-4 rounded">
-                    <p>
-                      <strong>Order ID:</strong> {order._id}
-                    </p>
-                    <p>
-                      <strong>Status:</strong> {order.status}
-                    </p>
-                    <p>
-                      <strong>Page Count:</strong> {order.pageCount}
-                    </p>
-                    {order.format && (
-                      <p>
-                        <strong>Format:</strong> {order.format}
-                      </p>
-                    )}
-                    {order.color && (
-                      <p>
-                        <strong>Color:</strong> {order.color}
-                      </p>
-                    )}
-                    {order.binding && (
-                      <p>
-                        <strong>Binding:</strong> {order.binding}
-                      </p>
-                    )}
-                    {order.notes && (
-                      <p>
-                        <strong>Notes:</strong> {order.notes}
-                      </p>
-                    )}
-                    {order.address && (
-                      <p>
-                        <strong>Address:</strong> {order.address}
-                      </p>
-                    )}
-                    {order.location && (
-                      <p>
-                        <strong>Location:</strong> Lat:{' '}
-                        {order.location.latitude}, Lon:{' '}
-                        {order.location.longitude}
-                      </p>
-                    )}
-                    {order.price && (
-                      <p>
-                        <strong>Price:</strong> ${order.price}
-                      </p>
-                    )}
-                    <p>
-                      <strong>Created:</strong>{' '}
-                      {new Date(order.createdAt).toLocaleDateString()}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )} */}
+            <option value="">Select Format</option>
+            <option value="A4">A4</option>
+            <option value="A5">A5</option>
+            <option value="Letter">Letter</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium">Color</label>
+          <select
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+            className="mt-1 block w-full border rounded p-2"
+          >
+            <option value="">Select Color</option>
+            <option value="Color">Color</option>
+            <option value="Black & White">Black & White</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium">Binding</label>
+          <select
+            value={binding}
+            onChange={(e) => setBinding(e.target.value)}
+            className="mt-1 block w-full border rounded p-2"
+          >
+            <option value="">Select Binding</option>
+            <option value="Softcover">Softcover</option>
+            <option value="Hardcover">Hardcover</option>
+            <option value="Spiral">Spiral</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium">
+            Notes (max 500 characters)
+          </label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value.slice(0, 500))}
+            className="mt-1 block w-full border rounded p-2"
+            rows={4}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium">Delivery Address</label>
+          <input
+            type="text"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            className="mt-1 block w-full border rounded p-2"
+          />
+        </div>
+
+        {error && <p className="text-red-500 text-center">{error}</p>}
+
+        <button
+          onClick={onCheckOut}
+          disabled={loading}
+          className="bg-green-500 text-white px-4 py-2 rounded disabled:bg-gray-400 w-full"
+        >
+          {loading ? 'Submitting...' : 'Submit Order'}
+        </button>
       </div>
     </div>
   )
