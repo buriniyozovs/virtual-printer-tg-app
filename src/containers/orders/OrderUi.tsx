@@ -115,7 +115,7 @@ export default function OrderUi({ userId }: OrderUiProps) {
       console.log('Sending order data:', orderData)
 
       if (telegram) {
-        telegram.sendData(JSON.stringify(orderData))
+        telegram.sendData(JSON.stringify('test'))
       }
 
       // Reset form
