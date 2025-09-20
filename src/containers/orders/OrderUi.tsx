@@ -1,0 +1,365 @@
+'use client'
+
+import axios from 'axios'
+import React, { useEffect, useState } from 'react'
+
+// Define the Order interface based on the provided schema
+interface Order {
+  _id?: string
+  // fileId?: string
+  pageCount: number
+  format?: string
+  color?: string
+  binding?: string
+  status:
+    | 'CREATING'
+    | 'CREATED'
+    | 'PRINTING'
+    | 'PRINTED'
+    | 'ACCEPTED'
+    | 'DELIVERING'
+    | 'DELIVERED'
+    | 'CANCELLED'
+    | 'COMPLETED'
+  notes?: string
+  address?: string
+  location?: {
+    latitude: number
+    longitude: number
+  }
+  price?: number
+  companyId?: string
+  courierId?: string
+  createdBy: string
+  updatedAt: number
+  createdAt: number
+}
+
+interface OrderUiProps {
+  userId?: string
+}
+
+export default function OrderUi({ userId }: OrderUiProps) {
+  // State for form inputs
+  // const [file, setFile] = useState<File | null>(null)
+  const [pageCount, setPageCount] = useState<number>(0)
+  const [format, setFormat] = useState<string>('')
+  const [color, setColor] = useState<string>('')
+  const [binding, setBinding] = useState<string>('')
+  const [notes, setNotes] = useState<string>('')
+  const [address, setAddress] = useState<string>('')
+  const [location, setLocation] = useState<{
+    latitude: number
+    longitude: number
+  } | null>(null)
+  const [orders, setOrders] = useState<Order[]>([])
+  const [loading, setLoading] = useState<boolean>(false)
+  const [error, setError] = useState<string>('')
+  const telegram = window.Telegram?.WebApp
+  // Initialize Telegram Web App
+  useEffect(() => {
+    if (telegram) {
+      telegram.ready()
+      // Optionally, expand the Web App for better UX
+      telegram.expand()
+    }
+  }, [])
+
+  const onCheckOut = () => {
+    if (telegram) {
+      telegram.MainButton.text = 'Create Order'
+      telegram.MainButton.color = '#4CAF50' // Green color
+      telegram.MainButton.show()
+    }
+  }
+
+  // Fetch existing orders for the user
+  // useEffect(() => {
+  //   if (userId) {
+  //     const fetchOrders = async () => {
+  //       try {
+  //         const response = await axios.get(`/api/orders?userId=${userId}`)
+  //         setOrders(response.data)
+  //       } catch (err) {
+  //         setError('Failed to fetch orders')
+  //       }
+  //     }
+  //     fetchOrders()
+  //   }
+  // }, [userId])
+
+  // Handle file selection
+  // const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   if (e.target.files && e.target.files[0]) {
+  //     setFile(e.target.files[0])
+  //   }
+  // }
+
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+
+    try {
+      // Upload file to get fileId
+      // let fileId: string | undefined
+      // if (file) {
+      //   const formData = new FormData()
+      //   formData.append('file', file)
+      //   const fileResponse = await axios.post('/api/upload', formData, {
+      //     headers: { 'Content-Type': 'multipart/form-data' },
+      //   })
+      //   fileId = fileResponse.data.fileId
+      // }
+
+      const orderData: Partial<Order> = {
+        // fileId,
+        pageCount,
+        format: format || undefined,
+        color: color || undefined,
+        binding: binding || undefined,
+        status: 'CREATING',
+        notes: notes || undefined,
+        address: address || undefined,
+        location: location || undefined,
+        createdBy:
+          userId || window?.Telegram?.WebApp?.initDataUnsafe?.user?.id || '',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      }
+
+      const response = await axios.post('/api/orders', orderData)
+      setOrders([...orders, response.data])
+      // Reset form
+      // setFile(null)
+      setPageCount(0)
+      setFormat('')
+      setColor('')
+      setBinding('')
+      setNotes('')
+      setAddress('')
+      setLocation(null)
+    } catch (err) {
+      setError('Failed to submit order')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Handle location capture (simplified, assuming Telegram Web App location API or manual input)
+  const handleLocation = () => {
+    // Placeholder for Telegram location API or browser geolocation
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          })
+        },
+        () => {
+          setError('Failed to get location')
+        }
+      )
+    } else {
+      setError('Geolocation not supported')
+    }
+  }
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+      <div className="p-4 max-w-2xl w-full bg-white rounded shadow">
+        <h1 className="text-2xl font-bold mb-4 text-center">
+          Book Printing Order
+        </h1>
+
+        {/* Order Form */}
+        <form onSubmit={onCheckOut} className="space-y-4">
+          {/* <div>
+            <label className="block text-sm font-medium">
+              Upload Book File (PDF)
+            </label>
+            <input
+              type="file"
+              accept=".pdf"
+              onChange={handleFileChange}
+              className="mt-1 block w-full border rounded p-2"
+              required
+            />
+          </div> */}
+
+          <div>
+            <label className="block text-sm font-medium">Page Count</label>
+            <input
+              type="number"
+              value={pageCount}
+              onChange={(e) => setPageCount(Number(e.target.value))}
+              className="mt-1 block w-full border rounded p-2"
+              required
+              min="1"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium">Format</label>
+            <select
+              value={format}
+              onChange={(e) => setFormat(e.target.value)}
+              className="mt-1 block w-full border rounded p-2"
+            >
+              <option value="">Select Format</option>
+              <option value="A4">A4</option>
+              <option value="A5">A5</option>
+              <option value="Letter">Letter</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium">Color</label>
+            <select
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              className="mt-1 block w-full border rounded p-2"
+            >
+              <option value="">Select Color</option>
+              <option value="Color">Color</option>
+              <option value="Black & White">Black & White</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium">Binding</label>
+            <select
+              value={binding}
+              onChange={(e) => setBinding(e.target.value)}
+              className="mt-1 block w-full border rounded p-2"
+            >
+              <option value="">Select Binding</option>
+              <option value="Softcover">Softcover</option>
+              <option value="Hardcover">Hardcover</option>
+              <option value="Spiral">Spiral</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium">
+              Notes (max 500 characters)
+            </label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value.slice(0, 500))}
+              className="mt-1 block w-full border rounded p-2"
+              rows={4}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium">
+              Delivery Address
+            </label>
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className="mt-1 block w-full border rounded p-2"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium">Location</label>
+            <button
+              type="button"
+              onClick={handleLocation}
+              className="mt-1 bg-blue-500 text-white px-4 py-2 rounded"
+            >
+              Share Location
+            </button>
+            {location && (
+              <p className="mt-2 text-sm">
+                Latitude: {location.latitude}, Longitude: {location.longitude}
+              </p>
+            )}
+          </div>
+
+          {error && <p className="text-red-500 text-center">{error}</p>}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="bg-green-500 text-white px-4 py-2 rounded disabled:bg-gray-400 w-full"
+          >
+            {loading ? 'Submitting...' : 'Submit Order'}
+          </button>
+        </form>
+
+        {/* Display Existing Orders */}
+        {userId && (
+          <div className="mt-8">
+            <h2 className="text-xl font-bold mb-4 text-center">Your Orders</h2>
+            {orders.length === 0 ? (
+              <p className="text-center">No orders found.</p>
+            ) : (
+              <ul className="space-y-4">
+                {orders.map((order) => (
+                  <li key={order._id} className="border p-4 rounded">
+                    <p>
+                      <strong>Order ID:</strong> {order._id}
+                    </p>
+                    <p>
+                      <strong>Status:</strong> {order.status}
+                    </p>
+                    <p>
+                      <strong>Page Count:</strong> {order.pageCount}
+                    </p>
+                    {order.format && (
+                      <p>
+                        <strong>Format:</strong> {order.format}
+                      </p>
+                    )}
+                    {order.color && (
+                      <p>
+                        <strong>Color:</strong> {order.color}
+                      </p>
+                    )}
+                    {order.binding && (
+                      <p>
+                        <strong>Binding:</strong> {order.binding}
+                      </p>
+                    )}
+                    {order.notes && (
+                      <p>
+                        <strong>Notes:</strong> {order.notes}
+                      </p>
+                    )}
+                    {order.address && (
+                      <p>
+                        <strong>Address:</strong> {order.address}
+                      </p>
+                    )}
+                    {order.location && (
+                      <p>
+                        <strong>Location:</strong> Lat:{' '}
+                        {order.location.latitude}, Lon:{' '}
+                        {order.location.longitude}
+                      </p>
+                    )}
+                    {order.price && (
+                      <p>
+                        <strong>Price:</strong> ${order.price}
+                      </p>
+                    )}
+                    <p>
+                      <strong>Created:</strong>{' '}
+                      {new Date(order.createdAt).toLocaleDateString()}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
