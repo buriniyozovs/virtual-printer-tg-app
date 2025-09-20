@@ -76,9 +76,11 @@ export default function OrderUi({ userId }: OrderUiProps) {
       setTelegram(window.Telegram.WebApp)
       window.Telegram.WebApp.ready()
       window.Telegram.WebApp.expand()
-      telegram.MainButton.text = 'Create Order'
-      telegram.MainButton.color = '#4CAF50'
-      telegram.MainButton.show()
+      if (telegram) {
+        telegram.MainButton.text = 'Create Order'
+        telegram.MainButton.color = '#4CAF50'
+        telegram.MainButton.show()
+      }
     }
   }, [])
 
