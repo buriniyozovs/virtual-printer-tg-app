@@ -5,7 +5,7 @@ import { ReactNode, useEffect } from 'react'
 
 export default function TelegramWrapper({ children }: { children: ReactNode }) {
   useEffect(() => {
-    if (window.Telegram?.WebApp) {
+    if (window?.Telegram?.WebApp) {
       window.Telegram.WebApp.ready()
     }
   }, [])
