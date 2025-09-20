@@ -1,9 +1,9 @@
+'use client'
+
 import OrderUi from '@/containers/orders/OrderUi'
 interface HomePageProps {
-  searchParams: Promise<{ [key: string]: string | undefined }>
+  searchParams: { [key: string]: string | undefined }
 }
 export default async function Home({ searchParams }: HomePageProps) {
-  const resolvedSearchParams = await searchParams
-
-  return <OrderUi userId={resolvedSearchParams.userId} />
+  return <OrderUi userId={searchParams.userId} />
 }

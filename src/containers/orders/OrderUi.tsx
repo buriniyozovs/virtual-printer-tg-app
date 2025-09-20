@@ -2,9 +2,31 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
+// Define Telegram Web App types (should be in app/types/telegram.d.ts)
+interface TelegramWebApp {
+  ready: () => void
+  expand: () => void
+  MainButton: {
+    text: string
+    color: string
+    show: () => void
+    hide: () => void
+  }
+  sendData: (data: string) => void
+  onEvent: (event: string, callback: () => void) => void
+  offEvent: (event: string, callback: () => void) => void
+  initDataUnsafe: {
+    user?: {
+      id: string
+      first_name?: string
+      last_name?: string
+    }
+  }
+}
+
 interface Order {
   _id?: string
-  // fileId?: string
+  fileId?: string // Reintroduced fileId
   pageCount: number
   format?: string
   color?: string
@@ -44,61 +66,83 @@ export default function OrderUi({ userId }: OrderUiProps) {
   const [binding, setBinding] = useState<string>('')
   const [notes, setNotes] = useState<string>('')
   const [address, setAddress] = useState<string>('')
+  const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string>('')
-  const telegram = window.Telegram?.WebApp
+
+  const telegram =
+    typeof window !== 'undefined' ? window.Telegram?.WebApp : undefined
+
   // Initialize Telegram Web App
   useEffect(() => {
     if (telegram) {
       telegram.ready()
-      // Optionally, expand the Web App for better UX
       telegram.expand()
     }
-  }, [])
+  }, [telegram])
 
   const onCheckOut = () => {
     console.log('Check Out clicked')
     if (telegram) {
       telegram.MainButton.text = 'Create Order'
-      telegram.MainButton.color = '#4CAF50' // Green color
+      telegram.MainButton.color = '#4CAF50'
       telegram.MainButton.show()
     }
   }
 
-  const handleSubmit = useCallback(() => {
+  // Handle form submission
+  const handleSubmit = useCallback(async () => {
+    setLoading(true)
+    setError('')
+
     try {
-      setLoading(true)
-      setError('')
-      if (telegram) {
-        const orderData: Partial<Order> = {
-          // fileId,
-          pageCount,
-          format: format || undefined,
-          color: color || undefined,
-          binding: binding || undefined,
-          status: 'CREATING',
-          notes: notes || undefined,
-          address: address || undefined,
-          createdBy:
-            userId || window?.Telegram?.WebApp?.initDataUnsafe?.user?.id || '',
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        }
-        telegram.sendData(JSON.stringify({ orderData }))
-        setPageCount(0)
-        setFormat('')
-        setColor('')
-        setBinding('')
-        setNotes('')
-        setAddress('')
+      // Upload file to get fileId
+      let fileId: string | undefined
+
+      const orderData: Partial<Order> = {
+        pageCount,
+        format: format || undefined,
+        color: color || undefined,
+        binding: binding || undefined,
+        status: 'CREATING',
+        notes: notes || undefined,
+        address: address || undefined,
+        createdBy: userId || telegram?.initDataUnsafe?.user?.id || '',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
       }
-    } catch (error) {
+
+      if (telegram) {
+        telegram.sendData(JSON.stringify({ orderData }))
+      }
+
+      setPageCount(0)
+      setFormat('')
+      setColor('')
+      setBinding('')
+      setNotes('')
+      setAddress('')
+      if (telegram) {
+        telegram.MainButton.hide()
+      }
+    } catch (err) {
       setError('Failed to submit order')
     } finally {
       setLoading(false)
     }
-  }, [pageCount, format, color, binding, notes, address, userId, telegram])
+  }, [
+    pageCount,
+    format,
+    color,
+    binding,
+    notes,
+    address,
+    userId,
+    telegram,
+    orders,
+  ])
 
+  // Bind Telegram MainButton
   useEffect(() => {
     if (telegram) {
       telegram.onEvent('mainButtonClicked', handleSubmit)
@@ -115,90 +159,111 @@ export default function OrderUi({ userId }: OrderUiProps) {
           Book Printing Order
         </h1>
 
-        <div>
-          <label className="block text-sm font-medium">Page Count</label>
-          <input
-            type="number"
-            value={pageCount}
-            onChange={(e) => setPageCount(Number(e.target.value))}
-            className="mt-1 block w-full border rounded p-2"
-            required
-            min="1"
-          />
-        </div>
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="pageCount" className="block text-sm font-medium">
+              Page Count
+            </label>
+            <input
+              id="pageCount"
+              type="number"
+              value={pageCount}
+              onChange={(e) => setPageCount(Number(e.target.value))}
+              className="mt-1 block w-full border rounded p-2"
+              required
+              min="1"
+              aria-required="true"
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium">Format</label>
-          <select
-            value={format}
-            onChange={(e) => setFormat(e.target.value)}
-            className="mt-1 block w-full border rounded p-2"
+          <div>
+            <label htmlFor="format" className="block text-sm font-medium">
+              Format
+            </label>
+            <select
+              id="format"
+              value={format}
+              onChange={(e) => setFormat(e.target.value)}
+              className="mt-1 block w-full border rounded p-2"
+            >
+              <option value="">Select Format</option>
+              <option value="A4">A4</option>
+              <option value="A5">A5</option>
+              <option value="Letter">Letter</option>
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="color" className="block text-sm font-medium">
+              Color
+            </label>
+            <select
+              id="color"
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              className="mt-1 block w-full border rounded p-2"
+            >
+              <option value="">Select Color</option>
+              <option value="Color">Color</option>
+              <option value="Black & White">Black & White</option>
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="binding" className="block text-sm font-medium">
+              Binding
+            </label>
+            <select
+              id="binding"
+              value={binding}
+              onChange={(e) => setBinding(e.target.value)}
+              className="mt-1 block w-full border rounded p-2"
+            >
+              <option value="">Select Binding</option>
+              <option value="Softcover">Softcover</option>
+              <option value="Hardcover">Hardcover</option>
+              <option value="Spiral">Spiral</option>
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="notes" className="block text-sm font-medium">
+              Notes (max 500 characters)
+            </label>
+            <textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value.slice(0, 500))}
+              className="mt-1 block w-full border rounded p-2"
+              rows={4}
+              maxLength={500}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="address" className="block text-sm font-medium">
+              Delivery Address
+            </label>
+            <input
+              id="address"
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className="mt-1 block w-full border rounded p-2"
+            />
+          </div>
+
+          {error && <p className="text-red-500 text-center">{error}</p>}
+
+          <button
+            onClick={onCheckOut}
+            disabled={loading}
+            className="bg-green-500 text-white px-4 py-2 rounded disabled:bg-gray-400 w-full cursor-pointer mt-4"
+            aria-label="Submit order"
           >
-            <option value="">Select Format</option>
-            <option value="A4">A4</option>
-            <option value="A5">A5</option>
-            <option value="Letter">Letter</option>
-          </select>
+            {loading ? 'Submitting...' : 'Submit Order'}
+          </button>
         </div>
-
-        <div>
-          <label className="block text-sm font-medium">Color</label>
-          <select
-            value={color}
-            onChange={(e) => setColor(e.target.value)}
-            className="mt-1 block w-full border rounded p-2"
-          >
-            <option value="">Select Color</option>
-            <option value="Color">Color</option>
-            <option value="Black & White">Black & White</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium">Binding</label>
-          <select
-            value={binding}
-            onChange={(e) => setBinding(e.target.value)}
-            className="mt-1 block w-full border rounded p-2"
-          >
-            <option value="">Select Binding</option>
-            <option value="Softcover">Softcover</option>
-            <option value="Hardcover">Hardcover</option>
-            <option value="Spiral">Spiral</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium">
-            Notes (max 500 characters)
-          </label>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value.slice(0, 500))}
-            className="mt-1 block w-full border rounded p-2"
-            rows={4}
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium">Delivery Address</label>
-          <input
-            type="text"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            className="mt-1 block w-full border rounded p-2"
-          />
-        </div>
-
-        {error && <p className="text-red-500 text-center">{error}</p>}
-
-        <button
-          onClick={onCheckOut}
-          disabled={loading}
-          className="bg-green-500 text-white px-4 py-2 rounded disabled:bg-gray-400 w-full cursor-pointer mt-4"
-        >
-          {loading ? 'Submitting...' : 'Submit Order'}
-        </button>
       </div>
     </div>
   )
