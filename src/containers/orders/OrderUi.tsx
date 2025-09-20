@@ -76,13 +76,17 @@ export default function OrderUi({ userId }: OrderUiProps) {
       setTelegram(window.Telegram.WebApp)
       window.Telegram.WebApp.ready()
       window.Telegram.WebApp.expand()
-      if (telegram) {
-        telegram.MainButton.text = 'Create Order'
-        telegram.MainButton.color = '#4CAF50'
-        telegram.MainButton.show()
-      }
     }
   }, [])
+
+  const onCheckOut = () => {
+    console.log('Check Out clicked')
+    if (telegram) {
+      telegram.MainButton.text = 'Create Order'
+      telegram.MainButton.color = '#4CAF50'
+      telegram.MainButton.show()
+    }
+  }
 
   const handleSubmit = useCallback(async () => {
     setLoading(true)
@@ -144,7 +148,7 @@ export default function OrderUi({ userId }: OrderUiProps) {
 
   useEffect(() => {
     if (telegram) {
-      const handleMainButtonClick = () => {
+      const handleMainButtonClick: () => void = () => {
         handleSubmit()
       }
 
@@ -168,113 +172,111 @@ export default function OrderUi({ userId }: OrderUiProps) {
           Book Printing Order
         </h1>
 
-        <form onSubmit={handleFormSubmit} className="space-y-4">
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="pageCount" className="block text-sm font-medium">
-                Page Count
-              </label>
-              <input
-                id="pageCount"
-                type="number"
-                value={pageCount}
-                onChange={(e) => setPageCount(Number(e.target.value))}
-                className="mt-1 block w-full border rounded p-2"
-                required
-                min="1"
-                aria-required="true"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="format" className="block text-sm font-medium">
-                Format
-              </label>
-              <select
-                id="format"
-                value={format}
-                onChange={(e) => setFormat(e.target.value)}
-                className="mt-1 block w-full border rounded p-2"
-              >
-                <option value="">Select Format</option>
-                <option value="A4">A4</option>
-                <option value="A5">A5</option>
-                <option value="Letter">Letter</option>
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="color" className="block text-sm font-medium">
-                Color
-              </label>
-              <select
-                id="color"
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-                className="mt-1 block w-full border rounded p-2"
-              >
-                <option value="">Select Color</option>
-                <option value="Color">Color</option>
-                <option value="Black & White">Black & White</option>
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="binding" className="block text-sm font-medium">
-                Binding
-              </label>
-              <select
-                id="binding"
-                value={binding}
-                onChange={(e) => setBinding(e.target.value)}
-                className="mt-1 block w-full border rounded p-2"
-              >
-                <option value="">Select Binding</option>
-                <option value="Softcover">Softcover</option>
-                <option value="Hardcover">Hardcover</option>
-                <option value="Spiral">Spiral</option>
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="notes" className="block text-sm font-medium">
-                Notes (max 500 characters)
-              </label>
-              <textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value.slice(0, 500))}
-                className="mt-1 block w-full border rounded p-2"
-                rows={4}
-                maxLength={500}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="address" className="block text-sm font-medium">
-                Delivery Address
-              </label>
-              <input
-                id="address"
-                type="text"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                className="mt-1 block w-full border rounded p-2"
-              />
-            </div>
-
-            {error && <p className="text-red-500 text-center">{error}</p>}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-green-500 text-white px-4 py-2 rounded disabled:bg-gray-400 w-full cursor-pointer mt-4"
-              aria-label="Submit order"
-            >
-              {loading ? 'Submitting...' : 'Submit Order'}
-            </button>
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="pageCount" className="block text-sm font-medium">
+              Page Count
+            </label>
+            <input
+              id="pageCount"
+              type="number"
+              value={pageCount}
+              onChange={(e) => setPageCount(Number(e.target.value))}
+              className="mt-1 block w-full border rounded p-2"
+              required
+              min="1"
+              aria-required="true"
+            />
           </div>
-        </form>
+
+          <div>
+            <label htmlFor="format" className="block text-sm font-medium">
+              Format
+            </label>
+            <select
+              id="format"
+              value={format}
+              onChange={(e) => setFormat(e.target.value)}
+              className="mt-1 block w-full border rounded p-2"
+            >
+              <option value="">Select Format</option>
+              <option value="A4">A4</option>
+              <option value="A5">A5</option>
+              <option value="Letter">Letter</option>
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="color" className="block text-sm font-medium">
+              Color
+            </label>
+            <select
+              id="color"
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              className="mt-1 block w-full border rounded p-2"
+            >
+              <option value="">Select Color</option>
+              <option value="Color">Color</option>
+              <option value="Black & White">Black & White</option>
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="binding" className="block text-sm font-medium">
+              Binding
+            </label>
+            <select
+              id="binding"
+              value={binding}
+              onChange={(e) => setBinding(e.target.value)}
+              className="mt-1 block w-full border rounded p-2"
+            >
+              <option value="">Select Binding</option>
+              <option value="Softcover">Softcover</option>
+              <option value="Hardcover">Hardcover</option>
+              <option value="Spiral">Spiral</option>
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="notes" className="block text-sm font-medium">
+              Notes (max 500 characters)
+            </label>
+            <textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value.slice(0, 500))}
+              className="mt-1 block w-full border rounded p-2"
+              rows={4}
+              maxLength={500}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="address" className="block text-sm font-medium">
+              Delivery Address
+            </label>
+            <input
+              id="address"
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className="mt-1 block w-full border rounded p-2"
+            />
+          </div>
+
+          {error && <p className="text-red-500 text-center">{error}</p>}
+
+          <button
+            onClick={onCheckOut}
+            disabled={loading}
+            className="bg-green-500 text-white px-4 py-2 rounded disabled:bg-gray-400 w-full cursor-pointer mt-4"
+            aria-label="Submit order"
+          >
+            {loading ? 'Submitting...' : 'Submit Order'}
+          </button>
+        </div>
       </div>
     </div>
   )
