@@ -1,28 +1,9 @@
 'use client'
 
+import uploadFileMultipart from '@/services/handleMultipartUpload'
+import { Button, Form, Input, Select } from 'antd'
+import TextArea from 'antd/es/input/TextArea'
 import { useCallback, useEffect, useState } from 'react'
-
-// Define Telegram Web App types (should be in app/types/telegram.d.ts)
-interface TelegramWebApp {
-  ready: () => void
-  expand: () => void
-  MainButton: {
-    text: string
-    color: string
-    show: () => void
-    hide: () => void
-  }
-  sendData: (data: string) => void
-  onEvent: (event: string, callback: () => void) => void
-  offEvent: (event: string, callback: () => void) => void
-  initDataUnsafe: {
-    user?: {
-      id: string
-      first_name?: string
-      last_name?: string
-    }
-  }
-}
 
 interface Order {
   _id?: string
@@ -56,7 +37,7 @@ interface Order {
 }
 
 interface OrderUiProps {
-  userId?: string
+  userId: string
 }
 
 export default function OrderUi({ userId }: OrderUiProps) {
@@ -68,8 +49,11 @@ export default function OrderUi({ userId }: OrderUiProps) {
   const [address, setAddress] = useState<string>('')
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string>('')
-
+  const [file, setFile] = useState<File | null>(null)
   const [telegram, setTelegram] = useState<any>(null)
+  const [uploadProgress, setUploadProgress] = useState<{
+    file: number
+  }>({ file: 0 })
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
@@ -87,6 +71,33 @@ export default function OrderUi({ userId }: OrderUiProps) {
       telegram.MainButton.show()
     }
   }
+
+  const handleUpdateProgress = (
+    type: 'audio' | 'video' | 'image',
+    progress: number
+  ) => {
+    setUploadProgress((prev) => ({
+      ...prev,
+      [type]: progress,
+    }))
+  }
+
+  const uploadFile = useCallback(async (): Promise<string | null> => {
+    console.log('Starting file upload...')
+    console.log('File to upload:', file)
+    if (!file) return null
+    try {
+      console.log('Uploading file:', file.name)
+      const fileId = await uploadFileMultipart(file, userId, (progress) =>
+        handleUpdateProgress('audio', progress)
+      )
+      console.log('File uploaded successfully, fileId:', fileId)
+      return fileId
+    } catch (error) {
+      console.error('Failed to upload file: ', error)
+      return null
+    }
+  }, [file])
 
   const handleSubmit = useCallback(async () => {
     setLoading(true)
@@ -155,105 +166,112 @@ export default function OrderUi({ userId }: OrderUiProps) {
   }, [handleSubmit, telegram])
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
-      <div className="p-4 max-w-2xl w-full bg-white rounded shadow">
+    <div className="fixed top-0 left-0 w-full h-full bg-gray-100 z-50 flex items-center justify-center">
+      <Form
+        layout="vertical"
+        className="flex flex-col justify-center items-center w-[95vw] sm:max-w-lg md:max-w-xl"
+      >
         <h1 className="text-2xl font-bold mb-4 text-center">
           Book Printing Order
         </h1>
+        <div className="space-y-1 w-full">
+          <Form.Item label="Upload File" required>
+            <Input
+              id="file"
+              type="file"
+              placeholder="Choose a file (PDF, DOC, TXT)"
+              accept=".pdf,.doc,.docx,.txt"
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  setFile(e.target.files[0])
+                }
+              }}
+              className="block w-full border rounded p-2"
+              required
+            />
+            <Button
+              onClick={uploadFile}
+              disabled={!file || uploadProgress.file > 0}
+              className="mt-2 bg-blue-500 text-white px-4 py-2 rounded disabled:bg-gray-400 w-full cursor-pointer"
+            >
+              {uploadProgress.file > 0 ? 'Uploading...' : 'Upload File'}
+            </Button>
+            {uploadProgress.file > 0 && uploadProgress.file < 100 && (
+              <p>Upload Progress: {uploadProgress.file}%</p>
+            )}
+            {file && <p>Selected File: {file.name}</p>}
+          </Form.Item>
 
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="pageCount" className="block text-sm font-medium">
-              Page Count
-            </label>
-            <input
+          <Form.Item label="Page Count" required>
+            <Input
               id="pageCount"
               type="number"
               value={pageCount}
               onChange={(e) => setPageCount(Number(e.target.value))}
-              className="mt-1 block w-full border rounded p-2"
+              className="w-full border rounded"
               required
               min="1"
               aria-required="true"
             />
-          </div>
+          </Form.Item>
 
-          <div>
-            <label htmlFor="format" className="block text-sm font-medium">
-              Format
-            </label>
-            <select
+          <Form.Item label="Format" required>
+            <Select
               id="format"
               value={format}
-              onChange={(e) => setFormat(e.target.value)}
-              className="mt-1 block w-full border rounded p-2"
-            >
-              <option value="">Select Format</option>
-              <option value="A4">A4</option>
-              <option value="A5">A5</option>
-              <option value="Letter">Letter</option>
-            </select>
-          </div>
+              onChange={(value) => setFormat(value)}
+              className="w-full border rounded"
+              options={[
+                { label: 'A4', value: 'A4' },
+                { label: 'A5', value: 'A5' },
+              ]}
+            />
+          </Form.Item>
 
-          <div>
-            <label htmlFor="color" className="block text-sm font-medium">
-              Color
-            </label>
-            <select
+          <Form.Item label="Color" required>
+            <Select
               id="color"
               value={color}
-              onChange={(e) => setColor(e.target.value)}
-              className="mt-1 block w-full border rounded p-2"
-            >
-              <option value="">Select Color</option>
-              <option value="Color">Color</option>
-              <option value="Black & White">Black & White</option>
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="binding" className="block text-sm font-medium">
-              Binding
-            </label>
-            <select
+              onChange={(value) => setColor(value)}
+              className="w-full border rounded"
+              options={[
+                { label: 'Color', value: 'Color' },
+                { label: 'Black & White', value: 'Black & White' },
+              ]}
+            />
+          </Form.Item>
+          <Form.Item label="Binding" required>
+            <Select
               id="binding"
               value={binding}
-              onChange={(e) => setBinding(e.target.value)}
-              className="mt-1 block w-full border rounded p-2"
-            >
-              <option value="">Select Binding</option>
-              <option value="Softcover">Softcover</option>
-              <option value="Hardcover">Hardcover</option>
-              <option value="Spiral">Spiral</option>
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="notes" className="block text-sm font-medium">
-              Notes (max 500 characters)
-            </label>
-            <textarea
+              onChange={(value) => setBinding(value)}
+              className="w-full border rounded"
+              options={[
+                { label: 'Softcover', value: 'Softcover' },
+                { label: 'Hardcover', value: 'Hardcover' },
+                { label: 'Spiral', value: 'Spiral' },
+              ]}
+            />
+          </Form.Item>
+          <Form.Item label="Notes" required>
+            <TextArea
               id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value.slice(0, 500))}
-              className="mt-1 block w-full border rounded p-2"
+              className="w-full border rounded"
               rows={4}
               maxLength={500}
             />
-          </div>
-
-          <div>
-            <label htmlFor="address" className="block text-sm font-medium">
-              Delivery Address
-            </label>
-            <input
+          </Form.Item>
+          <Form.Item label="Address" required>
+            <Input
               id="address"
               type="text"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              className="mt-1 block w-full border rounded p-2"
+              className="w-full border rounded"
             />
-          </div>
+          </Form.Item>
 
           {error && <p className="text-red-500 text-center">{error}</p>}
 
@@ -266,7 +284,7 @@ export default function OrderUi({ userId }: OrderUiProps) {
             {loading ? 'Submitting...' : 'Submit Order'}
           </button>
         </div>
-      </div>
+      </Form>
     </div>
   )
 }
