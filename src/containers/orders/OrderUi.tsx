@@ -149,6 +149,7 @@ export default function OrderUi({ userId }: OrderUiProps) {
         status: 'CREATING',
         notes: notes || undefined,
         address: address || undefined,
+        price: 100000,
         createdBy: userId || telegram?.initDataUnsafe?.user?.id || '',
       }
 
