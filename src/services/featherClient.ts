@@ -2,7 +2,7 @@ import { Application, feathers } from '@feathersjs/feathers'
 import socketio from '@feathersjs/socketio-client'
 import io from 'socket.io-client'
 
-const socket = io('http://localhost:3030', {
+const socket = io('https://1c2269d4c3da.ngrok-free.app', {
   transports: ['websocket'],
   forceNew: true,
 })
