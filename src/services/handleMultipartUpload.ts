@@ -12,12 +12,10 @@ export default async function uploadFileMultipart(
     const allowedPattern = /[^a-zA-Z0-9!._*'()-]/g
     const sanitizeKey = file.name.replace(allowedPattern, '')
 
-    console.info('Sanitized file name:', sanitizeKey)
     const initResponse = await feathersClient.service('uploads').create({
       key: sanitizeKey,
       contentType: file.type,
     })
-    console.log('Initiated multipart upload:', initResponse)
     const { uploadId, key } = initResponse
     const totalChunks = Math.ceil(file.size / CHUNK_SIZE)
     const parts = []
@@ -34,7 +32,6 @@ export default async function uploadFileMultipart(
         reader.readAsArrayBuffer(chunk)
       })
 
-      console.log(`Uploading chunk ${i + 1} of ${totalChunks}, key:`, key)
       const partResponse = await feathersClient.service('uploads').patch(null, {
         partNumber: i + 1,
         uploadId,
@@ -68,10 +65,15 @@ export default async function uploadFileMultipart(
         fileType: file.type,
         userId,
       })
-
-    return typeof completeResponse === 'string'
-      ? completeResponse
-      : JSON.stringify(completeResponse)
+    // Handle case where completeResponse might be an array
+    const responseObj =
+      Array.isArray(completeResponse) && completeResponse.length > 0
+        ? completeResponse[0]
+        : completeResponse
+    return {
+      pageCount: responseObj.pageCount,
+      mediaId: responseObj.mediaId,
+    }
   } catch (error) {
     console.error(`Error uploading `, error)
     throw error

@@ -1,9 +1,13 @@
 'use client'
 
 import uploadFileMultipart from '@/services/handleMultipartUpload'
-import { Button, Form, Input, Select } from 'antd'
+import { PlusOutlined } from '@ant-design/icons'
+import type { UploadProps } from 'antd'
+import { Button, Form, Input, message, Select } from 'antd'
 import TextArea from 'antd/es/input/TextArea'
+import { RcFile, UploadChangeParam, UploadFile } from 'antd/es/upload'
 import { useCallback, useEffect, useState } from 'react'
+import { Upload } from '../../components/upload/Upload'
 
 interface Order {
   _id?: string
@@ -35,6 +39,30 @@ interface Order {
   updatedAt: number
   createdAt: number
 }
+export interface CustomUploadFileProps extends UploadFile {
+  uid: string
+  size?: number
+  name: string
+  status?: 'error' | 'done' | 'uploading' | 'removed'
+  url?: string
+  type?: string
+  thumbUrl?: string
+}
+
+export interface CustomUploadProps extends UploadProps {
+  name?: string
+  fileList?: Array<CustomUploadFileProps>
+  beforeUploadFile?: CustomUploadFileProps
+  action?:
+    | string
+    | ((file: RcFile) => string)
+    | ((file: RcFile) => PromiseLike<string>)
+  multiple?: boolean
+  accept?: string
+  onChange?: (info: UploadChangeParam<CustomUploadFileProps>) => void
+  className?: string
+  onPreview?: (file: CustomUploadFileProps) => void
+}
 
 interface OrderUiProps {
   userId: string
@@ -49,7 +77,9 @@ export default function OrderUi({ userId }: OrderUiProps) {
   const [address, setAddress] = useState<string>('')
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string>('')
-  const [file, setFile] = useState<File | null>(null)
+  const [fileList, setFileList] = useState<CustomUploadFileProps[]>([])
+  const [file, setFile] = useState<File[]>([])
+  const [mediaId, setMediaId] = useState<string>('')
   const [telegram, setTelegram] = useState<any>(null)
   const [uploadProgress, setUploadProgress] = useState<{
     file: number
@@ -64,7 +94,6 @@ export default function OrderUi({ userId }: OrderUiProps) {
   }, [])
 
   const onCheckOut = () => {
-    console.log('Check Out clicked')
     if (telegram) {
       telegram.MainButton.text = 'Create Order'
       telegram.MainButton.color = '#4CAF50'
@@ -72,30 +101,31 @@ export default function OrderUi({ userId }: OrderUiProps) {
     }
   }
 
-  const handleUpdateProgress = (
-    type: 'audio' | 'video' | 'image',
-    progress: number
-  ) => {
+  const handleUpdateProgress = (type: 'file', progress: number) => {
     setUploadProgress((prev) => ({
       ...prev,
       [type]: progress,
     }))
   }
 
-  const uploadFile = useCallback(async (): Promise<string | null> => {
-    console.log('Starting file upload...')
-    console.log('File to upload:', file)
+  const uploadFile = useCallback(async () => {
+    setLoading(true)
     if (!file) return null
     try {
-      console.log('Uploading file:', file.name)
-      const fileId = await uploadFileMultipart(file, userId, (progress) =>
-        handleUpdateProgress('audio', progress)
+      const fileData = await uploadFileMultipart(file[0], userId, (progress) =>
+        handleUpdateProgress('file', progress)
       )
-      console.log('File uploaded successfully, fileId:', fileId)
-      return fileId
+      message.success('File uploaded successfully')
+      setPageCount(fileData.pageCount || 0)
+      setMediaId(fileData.mediaId || '')
+      setFile([])
     } catch (error) {
       console.error('Failed to upload file: ', error)
+      message.error('Failed to upload file')
       return null
+    } finally {
+      setLoading(false)
+      setUploadProgress({ file: 0 })
     }
   }, [file])
 
@@ -111,6 +141,7 @@ export default function OrderUi({ userId }: OrderUiProps) {
       }
 
       const orderData: Partial<Order> = {
+        fileId: mediaId || undefined,
         pageCount,
         format: format || undefined,
         color: color || undefined,
@@ -119,11 +150,7 @@ export default function OrderUi({ userId }: OrderUiProps) {
         notes: notes || undefined,
         address: address || undefined,
         createdBy: userId || telegram?.initDataUnsafe?.user?.id || '',
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
       }
-
-      console.log('Sending order data:', orderData)
 
       // if (telegram) {
       telegram.sendData(JSON.stringify(orderData))
@@ -151,22 +178,19 @@ export default function OrderUi({ userId }: OrderUiProps) {
   useEffect(() => {
     if (telegram) {
       const handleMainButtonClick = () => {
-        console.log('MainButton clicked') // Debug log
         handleSubmit()
       }
 
       telegram.onEvent('mainButtonClicked', handleMainButtonClick)
-      console.log('MainButton event listener attached') // Debug log
 
       return () => {
         telegram.offEvent('mainButtonClicked', handleMainButtonClick)
-        console.log('MainButton event listener removed') // Debug log
       }
     }
   }, [handleSubmit, telegram])
 
   return (
-    <div className="fixed top-0 left-0 w-full h-full bg-gray-100 z-50 flex items-center justify-center">
+    <div className="py-6 top-0 left-0 w-full h-full bg-gray-100 z-50 flex items-center justify-center">
       <Form
         layout="vertical"
         className="flex flex-col justify-center items-center w-[95vw] sm:max-w-lg md:max-w-xl"
@@ -176,30 +200,79 @@ export default function OrderUi({ userId }: OrderUiProps) {
         </h1>
         <div className="space-y-1 w-full">
           <Form.Item label="Upload File" required>
-            <Input
-              id="file"
-              type="file"
-              placeholder="Choose a file (PDF, DOC, TXT)"
-              accept=".pdf,.doc,.docx,.txt"
-              onChange={(e) => {
-                if (e.target.files && e.target.files[0]) {
-                  setFile(e.target.files[0])
+            <Upload
+              listType="text"
+              accept=".docx,.pdf"
+              maxCount={1}
+              multiple={false}
+              fileList={fileList}
+              onChange={async (info) => {
+                const { fileList, file } = info
+                if (file.status === 'removed') {
+                  setFileList((prev) =>
+                    prev ? prev.filter((doc) => doc.uid !== file.uid) : []
+                  )
+                  setFile((prev) =>
+                    prev ? prev.filter((doc) => doc.name !== file.name) : []
+                  )
+
+                  return
+                }
+
+                setFileList(
+                  fileList.map((file) => ({
+                    uid: file.uid,
+                    name: file.name,
+                    status: 'done',
+                    url:
+                      file.url ||
+                      (file.originFileObj
+                        ? URL.createObjectURL(file.originFileObj)
+                        : ''),
+                    thumbUrl:
+                      file.url ||
+                      (file.originFileObj
+                        ? URL.createObjectURL(file.originFileObj)
+                        : ''),
+                  }))
+                )
+
+                if (file.originFileObj && file.originFileObj != undefined) {
+                  setFile((prev) => {
+                    const fileExists = prev.some(
+                      (existingFile) =>
+                        existingFile.name === file.name &&
+                        existingFile.size === file.originFileObj?.size
+                    )
+                    return fileExists
+                      ? prev
+                      : [
+                          ...prev,
+                          ...(file.originFileObj ? [file.originFileObj] : []),
+                        ]
+                  })
                 }
               }}
-              className="block w-full border rounded p-2"
-              required
-            />
-            <Button
-              onClick={uploadFile}
-              disabled={!file || uploadProgress.file > 0}
-              className="mt-2 bg-blue-500 text-white px-4 py-2 rounded disabled:bg-gray-400 w-full cursor-pointer"
             >
-              {uploadProgress.file > 0 ? 'Uploading...' : 'Upload File'}
-            </Button>
+              {file.length == 0 && fileList.length == 0 && (
+                <Button className="w-full border rounded flex flex-row items-center justify-center p-4">
+                  <PlusOutlined />
+                  <div>Upload</div>
+                </Button>
+              )}
+            </Upload>
+            {file.length > 0 && (
+              <Button
+                onClick={uploadFile}
+                disabled={file.length == 0 || uploadProgress.file > 0}
+                className="bg-blue-500 text-white px-4 py-2 rounded disabled:bg-gray-400 w-full cursor-pointer"
+              >
+                {uploadProgress.file > 0 ? 'Uploading...' : 'Upload File'}
+              </Button>
+            )}
             {uploadProgress.file > 0 && uploadProgress.file < 100 && (
               <p>Upload Progress: {uploadProgress.file}%</p>
             )}
-            {file && <p>Selected File: {file.name}</p>}
           </Form.Item>
 
           <Form.Item label="Page Count" required>
