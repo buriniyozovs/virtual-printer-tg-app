@@ -7,7 +7,7 @@ const socket = io('https://f77d5aaf8e8e.ngrok-free.app', {
   forceNew: true,
 })
 
-console.log('Connecting to socket:', 'http://localhost:3030')
+console.log('Connecting to socket: ', 'http://localhost:3030')
 
 const feathersClient: Application = feathers()
 
