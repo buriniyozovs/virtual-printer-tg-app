@@ -115,7 +115,7 @@ export default function OrderUi({ userId }: OrderUiProps) {
       const fileData = await uploadFileMultipart(file[0], userId, (progress) =>
         handleUpdateProgress('file', progress)
       )
-      message.success('File uploaded successfully')
+      message.success('File uploaded successfully!')
       setPageCount(fileData.pageCount || 0)
       setMediaId(fileData.mediaId || '')
       setFile([])
